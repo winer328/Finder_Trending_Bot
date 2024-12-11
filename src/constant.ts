@@ -1,6 +1,6 @@
 import { Logger } from 'pino';
 import dotenv from 'dotenv';
-import { logger } from './helper';
+import { logger } from './helper/logger';
 
 dotenv.config();
 
