@@ -7,6 +7,7 @@ import { ADMIN_WALLET_PRV_KEY, JITO_TIP, TREND_AMOUNT_1, TREND_AMOUNT_2, TREND_A
 import { Keypair, PublicKey, SystemProgram, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import bs58 from 'bs58';
 import { JitoTransactionExecutor } from "../../jito-executor/jito-rpc-transaction-executor";
+import { TrendModel } from "../../database/trend-list";
 
 export const goToTrendPage = async (botClass: Bot, msg: TelegramBot.Message, isNew: boolean = true) => {
     if (!msg.text) return;
@@ -75,6 +76,17 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
     const result = await jitoExecutor.executeAndConfirm([sendSolTransaction], adminWalletKeyPair, latestBlockhash);
     if (result.confirmed) {
         logger.info('Jito Execute confirmed successfully.');
+        const newTrend = new TrendModel();
+        newTrend.chat_id = user.chat_id;
+        newTrend.username = user.username;
+        newTrend.firstname = user.firstname;
+        newTrend.lastname = user.lastname;
+        newTrend.token_address = botClass.token_address;
+        newTrend.from_time = Math.floor(new Date().getTime()/1000);
+        newTrend.to_time = newTrend.from_time + 3600 * botClass.time_for_trend;
+        newTrend.duration = 3600 * botClass.time_for_trend;
+        newTrend.is_owner = user.is_owner;
+        await newTrend.save();
         await customSendMessage(botClass.bot, msg, `Payment Succeed.\nYou can get real time trend notification in channel now.`);
         return;
     } else {
