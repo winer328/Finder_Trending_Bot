@@ -13,6 +13,12 @@ const retrieveEnvVariable = (variableName: string, logger: Logger) => {
     return variable;
 };
 
+// Admin Wallet
+export const ADMIN_WALLET_PRV_KEY = retrieveEnvVariable('ADMIN_WALLET_PRV_KEY', logger);
+
+// Transaction
+export const JITO_TIP = 0.0001;
+
 // Database Connection
 export const MONGO_URL = retrieveEnvVariable('MONGO_URL', logger);
 
@@ -23,3 +29,18 @@ export const RPC_WEBSOCKET_ENDPOINT = retrieveEnvVariable('RPC_WEBSOCKET_ENDPOIN
 // Telegram Bot
 export const BOT_TOKEN = retrieveEnvVariable('BOT_TOKEN', logger);
 export const BOT_NAME = retrieveEnvVariable('BOT_NAME', logger);
+
+// Telegram Bot State
+export const MAIN_PAGE = "MAIN_PAGE";
+export const ENTER_CA = "ENTER_CA";
+
+// Trend Constant
+export const TREND_AMOUNT_1 = 0.1;
+export const TREND_AMOUNT_2 = 6.5;
+export const TREND_AMOUNT_3 = 8.5;
+export const TREND_AMOUNT_4 = 17;
+
+export const TREND_TIME_1 = 3;
+export const TREND_TIME_2 = 6;
+export const TREND_TIME_3 = 12;
+export const TREND_TIME_4 = 24;

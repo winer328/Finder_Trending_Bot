@@ -4,9 +4,9 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import { UserModel } from "../../database/user";
 import { customSendMessageWithChatId } from "../../helper";
 
-export const registerUser = async (msg: TelegramBot.Message, command: string) => {
+export const registerUser = async (msg: TelegramBot.Message) => {
     const user = await getUserInfo(msg);
-    if(user) return;
+    if(user) return user;
 
     const newWallet = new Keypair();
     const newUser = new UserModel();
@@ -17,7 +17,7 @@ export const registerUser = async (msg: TelegramBot.Message, command: string) =>
     newUser.wallet_private_key = bs58.encode(newWallet.secretKey);
     newUser.wallet_public_key = newWallet.publicKey.toString();
     await newUser.save();
-    return;
+    return newUser;
 }
 
 export const getUserInfo = async (msg: TelegramBot.Message) => {
