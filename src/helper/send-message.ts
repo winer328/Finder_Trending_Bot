@@ -3,7 +3,7 @@ import TelegramBot from "node-telegram-bot-api";
 export const customSendMessage = async (bot: TelegramBot, msg: TelegramBot.Message, text: string, inlineButtons: { text: string; callback_data: string; }[][] = [], isNew: boolean = true): Promise<boolean> => {
     try {
         if (isNew) {
-            await bot.sendMessage(msg.chat.id, text, { reply_markup: { inline_keyboard: inlineButtons }, parse_mode: 'HTML' });
+            await bot.sendMessage(msg.chat.id, text, { reply_markup: { inline_keyboard: inlineButtons }, parse_mode: 'HTML', disable_web_page_preview: true });
         } else {
             await bot.editMessageText(text, {
                 chat_id: msg.chat.id,
@@ -11,7 +11,8 @@ export const customSendMessage = async (bot: TelegramBot, msg: TelegramBot.Messa
                 reply_markup: {
                     inline_keyboard: inlineButtons
                 },
-                parse_mode: 'HTML'
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
             });
         }
         return true;
@@ -20,12 +21,12 @@ export const customSendMessage = async (bot: TelegramBot, msg: TelegramBot.Messa
     }
 }
 
-export const customSendMessageWithChatId = async (bot: TelegramBot, chatId: TelegramBot.ChatId, text: string, inlineButtons: { text: string; callback_data: string; }[][] = []): Promise<boolean> => {
+export const customSendMessageWithChatId = async (bot: TelegramBot, chatId: TelegramBot.ChatId, text: string, inlineButtons: { text: string; callback_data: string; }[][] = []): Promise<TelegramBot.Message | null> => {
     try {
-        await bot.sendMessage(chatId, text, { reply_markup: { inline_keyboard: inlineButtons }, parse_mode: 'HTML' });
-        return true;
+        const sentMessage = await bot.sendMessage(chatId, text, { reply_markup: { inline_keyboard: inlineButtons }, parse_mode: 'HTML', disable_web_page_preview: true });
+        return sentMessage;
     } catch (error) {
-        return false;
+        return null;
     }
 }
 
