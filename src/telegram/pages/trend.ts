@@ -8,6 +8,7 @@ import { Keypair, PublicKey, SystemProgram, TransactionMessage, VersionedTransac
 import bs58 from 'bs58';
 import { JitoTransactionExecutor } from "../../jito-executor/jito-rpc-transaction-executor";
 import { TrendModel } from "../../database/trend-list";
+import { ChannelBot } from "../channel";
 
 export const goToTrendPage = async (botClass: Bot, msg: TelegramBot.Message, isNew: boolean = true) => {
     if (!msg.text) return;
@@ -20,12 +21,13 @@ export const goToTrendPage = async (botClass: Bot, msg: TelegramBot.Message, isN
         return;
     };
     const text = `🎯 Finder Trending List\n\n   Symbol: <a href="https://dexscreener.com/solana/${msg.text}" target="_blank">${token_data.symbol}</a>\n   CA: <code>${msg.text}</code>\n   Liquidity: $${Math.floor(token_data.liquidity)/1000}K\n   Market Cap: $${Math.floor(token_data.marketCap)/1000}K\n\n- Get featured on Finder Trending\n- Boost your token's visibility\n- Increase trading volume\n\n➤ Select Trending Boost below`;
-    const inlineButtons = [
+    let inlineButtons = [
         [{ text: `${TREND_AMOUNT_1} SOL for ${TREND_TIME_1} hours`, callback_data: 'setSolAmountForTrend/1' }],
         [{ text: `${TREND_AMOUNT_2} SOL for ${TREND_TIME_2} hours`, callback_data: 'setSolAmountForTrend/2' }],
         [{ text: `${TREND_AMOUNT_3} SOL for ${TREND_TIME_3} hours`, callback_data: 'setSolAmountForTrend/3' }],
         [{ text: `${TREND_AMOUNT_4} SOL for ${TREND_TIME_4} hours`, callback_data: 'setSolAmountForTrend/4' }],
     ];
+    if (user.is_owner) inlineButtons = [[{ text: 'Add token to trend list', callback_data: 'addTokenTrend' }]];
     await customSendMessage(botClass.bot, msg, text, inlineButtons, isNew);
     return;
 }
@@ -87,10 +89,31 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
         newTrend.duration = 3600 * botClass.time_for_trend;
         newTrend.is_owner = user.is_owner;
         await newTrend.save();
-        await customSendMessage(botClass.bot, msg, `Payment Succeed.\nYou can get real time trend notification in channel now.`);
+        await customSendMessage(botClass.bot, msg, `Payment Succeed.\nYou can get real time trend notification in channel now.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
         return;
     } else {
-        await customSendMessage(botClass.bot, msg, `Error during execution.\nPlease type /help to get help.`);
+        await customSendMessage(botClass.bot, msg, `Error during execution.\nPlease type /help to get help.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
         return;
     }
+}
+
+// For admin action
+export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Message) => {
+    const user = await getUserInfo(msg); if (!user || !msg.text) return;
+    const newTrend = new TrendModel();
+    newTrend.chat_id = user.chat_id;
+    newTrend.username = user.username;
+    newTrend.firstname = user.firstname;
+    newTrend.lastname = user.lastname;
+    newTrend.token_address = botClass.token_address;
+    newTrend.from_time = Math.floor(new Date().getTime()/1000);
+    newTrend.to_time = -1;
+    newTrend.duration = -1;
+    newTrend.is_owner = user.is_owner;
+    await newTrend.save();
+    await customSendMessage(botClass.bot, msg, `Action Succeed.\nYou can get real time trend notification in channel now.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+    
+    const channelBot = new ChannelBot(botClass.bot, botClass.connection);
+    await channelBot.refreshTrendList();
+    return;
 }

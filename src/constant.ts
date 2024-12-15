@@ -30,6 +30,9 @@ export const RPC_WEBSOCKET_ENDPOINT = retrieveEnvVariable('RPC_WEBSOCKET_ENDPOIN
 export const BOT_TOKEN = retrieveEnvVariable('BOT_TOKEN', logger);
 export const BOT_NAME = retrieveEnvVariable('BOT_NAME', logger);
 
+// Channel Id
+export const CHANNEL_ID = retrieveEnvVariable('CHANNEL_ID', logger);
+
 // Telegram Bot State
 export const MAIN_PAGE = "MAIN_PAGE";
 export const ENTER_CA = "ENTER_CA";

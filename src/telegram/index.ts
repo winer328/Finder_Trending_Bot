@@ -1,10 +1,12 @@
 import { Connection } from "@solana/web3.js";
 import TelegramBot from "node-telegram-bot-api";
-import { BOT_TOKEN, ENTER_CA, MAIN_PAGE, TREND_AMOUNT_1, TREND_AMOUNT_2, TREND_AMOUNT_3, TREND_AMOUNT_4, TREND_TIME_1, TREND_TIME_2, TREND_TIME_3, TREND_TIME_4 } from "../constant";
+import { BOT_TOKEN, CHANNEL_ID, ENTER_CA, MAIN_PAGE, TREND_AMOUNT_1, TREND_AMOUNT_2, TREND_AMOUNT_3, TREND_AMOUNT_4, TREND_TIME_1, TREND_TIME_2, TREND_TIME_3, TREND_TIME_4 } from "../constant";
 import { logger } from "../helper/logger";
-import { registerUser } from "./handler";
-import { goToMainPage, goToPaymentPage, goToTrendPage, processTrendPayment } from "./pages";
-import { customSendMessage } from "../helper";
+import { getUserInfo, registerUser } from "./handler";
+import { goToMainPage, goToPaymentPage, goToTrendPage, processAddTokenTrend, processTrendPayment } from "./pages";
+import { customSendMessage, customSendMessageWithChatId, deleteTelegramMessage, sleep } from "../helper";
+import fs from "fs";
+import { ChannelBot } from "./channel";
 
 export class Bot {
     bot: TelegramBot;
@@ -26,6 +28,10 @@ export class Bot {
     start = () => {
         this.botInitialize();
         this.bot.startPolling();
+
+        // start channel action
+        const channelBot = new ChannelBot(this.bot, this.connection);
+        channelBot.start();
     }
 
     botInitialize = () => {
@@ -45,6 +51,16 @@ export class Bot {
                 this.bot_state = ENTER_CA;
                 await customSendMessage(this.bot, msg, `Enter token address that has hit to start trending.\nFor ex. <code>6BY4bFK6yuP6tqoxhZEXe2Y2Yxfj72JXN4DvPZtepump</code>`);
                 return;
+            } else if (command == '/add_token') {
+                const user = await registerUser(msg);
+                if (user.is_owner) {
+                    this.bot_state = ENTER_CA;
+                    await customSendMessage(this.bot, msg, `Please enter the Enter token address that has hit to start trending.\nFor ex. <code>6BY4bFK6yuP6tqoxhZEXe2Y2Yxfj72JXN4DvPZtepump</code>`);
+                    return;
+                } else {
+                    await customSendMessage(this.bot, msg, `Unfortunately you don't have permission to use this command.\nPlease contact with admin.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+                    return;
+                }
             } else {
                 // Enter default input
                 switch (this.bot_state) {
@@ -67,6 +83,16 @@ export class Bot {
             switch (command) {
                 case 'finishedPayForTrend':
                     processTrendPayment(this, callBackData.message, true);
+                    break;
+                case 'goToRefreshTrendList':
+                    const channelBot = new ChannelBot(this.bot, this.connection);
+                    channelBot.refreshTrendList();
+                    break;
+                case 'addTokenTrend':
+                    processAddTokenTrend(this, callBackData.message);
+                    break;
+                case 'deleteMessage':
+                    deleteTelegramMessage(this.bot, callBackData.message);
                     break;
                 default:
                     break;

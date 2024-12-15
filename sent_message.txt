@@ -1,0 +1,1 @@
+{"message_id":45,"from":{"id":7212784183,"is_bot":true,"first_name":"Test","username":"rex328_bot"},"author_signature":"Test","chat":{"id":-1002471748678,"title":"testChannel","username":"trendFound","type":"channel"},"date":1734299396,"text":"TrendFound"}
