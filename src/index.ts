@@ -2,6 +2,7 @@ import { Connection } from "@solana/web3.js";
 import { createMongoConnection } from "./helper";
 import { RPC_ENDPOINT, RPC_WEBSOCKET_ENDPOINT } from "./constant";
 import { Bot } from "./telegram";
+import { runWebhookserver } from "./webhook-server";
 // import { Bot } from "./telegram";
 
 const connection = new Connection(RPC_ENDPOINT, {
@@ -12,4 +13,5 @@ const telegramBot = new Bot(connection);
 
 createMongoConnection(() => {
     telegramBot.start();
+    runWebhookserver(telegramBot, connection);
 })

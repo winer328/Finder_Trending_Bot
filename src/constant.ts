@@ -22,6 +22,11 @@ export const JITO_TIP = 0.0001;
 // Database Connection
 export const MONGO_URL = retrieveEnvVariable('MONGO_URL', logger);
 
+// Webhook server
+export const WEBHOOK_PORT = retrieveEnvVariable('WEBHOOK_PORT', logger);
+export const WEBHOOK_IP = retrieveEnvVariable('WEBHOOK_IP', logger);
+export const WEBHOOK_URI = retrieveEnvVariable('WEBHOOK_URI', logger);
+
 // Solana Connection
 export const RPC_ENDPOINT = retrieveEnvVariable('RPC_ENDPOINT', logger);
 export const RPC_WEBSOCKET_ENDPOINT = retrieveEnvVariable('RPC_WEBSOCKET_ENDPOINT', logger);
