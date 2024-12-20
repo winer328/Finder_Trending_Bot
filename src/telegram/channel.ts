@@ -22,7 +22,12 @@ export class ChannelBot {
     startChannelAction = async () => {
         let content = '';
         content = fs.readFileSync("./sent_message.txt", 'utf8');
-        const trendList = await TrendModel.find();
+        const trendList = await TrendModel.find({
+            $or: [
+                { to_time: -1 },
+                { to_time: { $gt: Math.floor(new Date().getTime() / 1000) } }
+            ]
+        });
         let tokenList = [];
         for (let trendData of trendList) {
             const tokenData = await getTokenDataByDexscreenerApi(trendData.token_address);
@@ -74,7 +79,12 @@ export class ChannelBot {
     refreshTrendList = async () => {
         let content = '';
         content = fs.readFileSync("./sent_message.txt", 'utf8');
-        const trendList = await TrendModel.find();
+        const trendList = await TrendModel.find({
+            $or: [
+                { to_time: -1 },
+                { to_time: { $gt: Math.floor(new Date().getTime() / 1000) } }
+            ]
+        });
         let tokenList = [];
         for (let trendData of trendList) {
             const tokenData = await getTokenDataByDexscreenerApi(trendData.token_address);
