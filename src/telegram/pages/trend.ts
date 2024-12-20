@@ -47,12 +47,18 @@ export const goToPaymentPage = async (botClass: Bot, msg: TelegramBot.Message, i
 }
 
 export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Message, isNew: boolean = true) => {
-    const user = await getUserInfo(msg); if (!user || !msg.text) return;
+    const user = await getUserInfo(msg); if (!user || !msg.text || botClass.token_address.length == 0) return;
     const userWallet = Keypair.fromSecretKey(bs58.decode(user.wallet_private_key));
     const solBalance = await getSolBalance(botClass.connection, userWallet.publicKey);
 
     if (solBalance < botClass.sol_for_trend * 10 ** 9) {
         await customSendMessage(botClass.bot, msg, `Sol balance is ${Math.floor(solBalance/10 ** 7)/100} SOL, you need ${botClass.sol_for_trend} SOL to pay.`);
+        return;
+    }
+
+    const existTokenInTrend = await TrendModel.find({ token_address: botClass.token_address });
+    if (existTokenInTrend.length > 0) {
+        await customSendMessage(botClass.bot, msg, `The same token already exists in the trend list.`);
         return;
     }
 
@@ -90,6 +96,8 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
         newTrend.is_owner = user.is_owner;
         await newTrend.save();
         await customSendMessage(botClass.bot, msg, `Payment Succeed.\nYou can get real time trend notification in channel now.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+        const channelBot = new ChannelBot(botClass.bot, botClass.connection);
+        await channelBot.refreshTrendList();
         return;
     } else {
         await customSendMessage(botClass.bot, msg, `Error during execution.\nPlease type /help to get help.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
@@ -99,6 +107,13 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
 
 // For admin action
 export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Message) => {
+    if (botClass.token_address.length == 0) return;
+    const existTokenInTrend = await TrendModel.find({ token_address: botClass.token_address });
+    if (existTokenInTrend.length > 0) {
+        await customSendMessage(botClass.bot, msg, `The same token already exists in the trend list.`);
+        return;
+    }
+
     const user = await getUserInfo(msg); if (!user || !msg.text) return;
     const newTrend = new TrendModel();
     newTrend.chat_id = user.chat_id;
