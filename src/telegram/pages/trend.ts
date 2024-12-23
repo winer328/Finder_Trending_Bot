@@ -10,6 +10,8 @@ import { JitoTransactionExecutor } from "../../jito-executor/jito-rpc-transactio
 import { TrendModel } from "../../database/trend-list";
 import { ChannelBot } from "../channel";
 import fs from "fs";
+import { HeliusWebhookModel } from "../../database/helius-webhook";
+import { appendAddressesInWebhook, createWebhook } from "../../helper/helius";
 
 export const goToTrendPage = async (botClass: Bot, msg: TelegramBot.Message, isNew: boolean = true) => {
     if (!msg.text) return;
@@ -92,6 +94,38 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
     const result = await jitoExecutor.executeAndConfirm([sendSolTransaction], adminWalletKeyPair, latestBlockhash);
     if (result.confirmed) {
         logger.info('Jito Execute confirmed successfully.');
+
+        try {
+            const existWebhook = await HeliusWebhookModel.find();
+            if (existWebhook.length > 0 && existWebhook[0].webhook_id) {
+                // update webhook
+                const webhookResult = await appendAddressesInWebhook(existWebhook[0].webhook_id, [botClass.token_address]);
+                if (webhookResult.flag && webhookResult.addresses) {
+                    existWebhook[0].addresses = webhookResult.addresses;
+                    await existWebhook[0].save();
+                } else {
+                    customSendMessage(botClass.bot, msg, `Error during register webhook in Helius.\n${webhookResult.message}`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+                    return;
+                }
+            } else {
+                // create webhook
+                const webhookResult = await createWebhook([botClass.token_address]);
+                if (webhookResult.flag) {
+                    const newWebhookLog = new HeliusWebhookModel();
+                    newWebhookLog.webhook_id = webhookResult.message;
+                    newWebhookLog.addresses = [botClass.token_address];
+                    await newWebhookLog.save();
+                } else {
+                    customSendMessage(botClass.bot, msg, `Error during create webhook in Helius.\n${webhookResult.message}`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+                    return;
+                }
+            }
+        } catch (e) {
+            customSendMessage(botClass.bot, msg, `Unknown error occurs in the server.\nPlease contact with support team.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+            logger.error(`Error during save webhook. ${e}`);
+            return;
+        }
+        
         const newTrend = new TrendModel();
         newTrend.chat_id = user.chat_id;
         newTrend.username = user.username;
@@ -139,6 +173,38 @@ export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Messa
     }
 
     const user = await getUserInfo(msg); if (!user || !msg.text) return;
+
+    try {
+        const existWebhook = await HeliusWebhookModel.find();
+        if (existWebhook.length > 0 && existWebhook[0].webhook_id) {
+            // update webhook
+            const webhookResult = await appendAddressesInWebhook(existWebhook[0].webhook_id, [botClass.token_address]);
+            if (webhookResult.flag && webhookResult.addresses) {
+                existWebhook[0].addresses = webhookResult.addresses;
+                await existWebhook[0].save();
+            } else {
+                customSendMessage(botClass.bot, msg, `Error during register webhook in Helius.\n${webhookResult.message}`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+                return;
+            }
+        } else {
+            // create webhook
+            const webhookResult = await createWebhook([botClass.token_address]);
+            if (webhookResult.flag) {
+                const newWebhookLog = new HeliusWebhookModel();
+                newWebhookLog.webhook_id = webhookResult.message;
+                newWebhookLog.addresses = [botClass.token_address];
+                await newWebhookLog.save();
+            } else {
+                customSendMessage(botClass.bot, msg, `Error during create webhook in Helius.\n${webhookResult.message}`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+                return;
+            }
+        }
+    } catch (e) {
+        customSendMessage(botClass.bot, msg, `Unknown error occurs in the server.\nPlease contact with support team.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
+        logger.error(`Error during save webhook. ${e}`);
+        return;
+    }
+
     const newTrend = new TrendModel();
     newTrend.chat_id = user.chat_id;
     newTrend.username = user.username;
