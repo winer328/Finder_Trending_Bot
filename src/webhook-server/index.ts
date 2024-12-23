@@ -29,7 +29,9 @@ export const runWebhookserver = async (botClass: Bot, connection: Connection) =>
 
             } else {
                 // BUY
+                logger.info('received buy webhook.');
                 const token_data = (swap_event.tokenOutputs)[0];
+                if (!token_data) return res.json({});
 
                 const dbToken = await TrendModel.findOne({
                     $and: [
@@ -50,11 +52,14 @@ export const runWebhookserver = async (botClass: Bot, connection: Connection) =>
                 const tokenOutputAmount = token_data.rawTokenAmount.tokenAmount;
                 const tokenDecimals = token_data.rawTokenAmount.decimals;
                 let description = ` ✳️ ${(tokenOutputAmount / 10 ** tokenDecimals).toFixed(4)} <a href="https://dexscreener.com/solana/${token_data.mint}" target="_blank">${tokenDescription.symbol}</a> were <a href="https://solscan.io/tx/${response_data[0].signature}" target="_blank">sold</a> for ${(native_data.amount / 10 ** 9).toFixed(4)} SOL\n\n`;
+
+                console.log(Number(dbToken.initial_price));
+                console.log(tokenDescription.priceNative);
                 
                 if (Number(dbToken.initial_price) < tokenDescription.priceNative) {
-                    const upPercent = Math.floor(tokenDescription.priceNative/Number(dbToken.initial_price) * 100) - 100;
+                    const upPercent = Math.floor(Number(tokenDescription.priceNative)/Number(dbToken.initial_price) * 100) - 100;
                     if (upPercent > 0) {
-                        description += `${token_data.symbol} is up ${upPercent}$ from Finder Trending`;
+                        description += `${tokenDescription.symbol} is up ${upPercent}$ from Finder Trending\n\n`;
                     }
                 }
 
@@ -63,7 +68,7 @@ export const runWebhookserver = async (botClass: Bot, connection: Connection) =>
                 await channelBot.refreshTrendList();
                 const content = fs.readFileSync("./sent_message.txt", "utf8");
 
-                await customSendMessage(botClass.bot, JSON.parse(content), description, [], false);
+                await customSendMessage(botClass.bot, JSON.parse(content), description, [], true);
                 return res.json({});
             }
         }
