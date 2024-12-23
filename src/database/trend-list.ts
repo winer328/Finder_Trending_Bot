@@ -7,7 +7,7 @@ let model = new Schema({
     firstname: {type: String, default: ''},
     lastname: {type: String, default: ''},
     token_address: {type: String, default: ''},
-    initial_price: {type: Number, default: 0},
+    initial_price: {type: String, default: '0'},
     from_time: {type: Number, default: 0},
     to_time: {type: Number, default: 0},
     duration: {type: Number, default: 0},
