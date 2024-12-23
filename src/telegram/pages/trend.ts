@@ -9,6 +9,7 @@ import bs58 from 'bs58';
 import { JitoTransactionExecutor } from "../../jito-executor/jito-rpc-transaction-executor";
 import { TrendModel } from "../../database/trend-list";
 import { ChannelBot } from "../channel";
+import fs from "fs";
 
 export const goToTrendPage = async (botClass: Bot, msg: TelegramBot.Message, isNew: boolean = true) => {
     if (!msg.text) return;
@@ -35,6 +36,7 @@ export const goToTrendPage = async (botClass: Bot, msg: TelegramBot.Message, isN
 export const goToPaymentPage = async (botClass: Bot, msg: TelegramBot.Message, isNew: boolean = true) => {
     const user = await getUserInfo(msg); if (!user || !msg.text) return;
     const token_data = await getTokenDataByDexscreenerApi(botClass.token_address);
+    console.log(token_data)
 
     const text = `Each Address below is unique to you.\n\nMake sure all infomation submitted is correct, no refunds will be given for entering incorrect address, telegram, or image.\n\nEntered Token: <code>${botClass.token_address}</code> (${token_data.symbol})\n\nSend <code>${botClass.sol_for_trend}</code> SOL to the wallet below for unlock ${botClass.time_for_trend} hours\n\n<code>${user.wallet_public_key}</code>\n\nClick 'Paid' once sent to scan for transaction.`;
 
@@ -59,6 +61,12 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
     const existTokenInTrend = await TrendModel.find({ token_address: botClass.token_address });
     if (existTokenInTrend.length > 0) {
         await customSendMessage(botClass.bot, msg, `The same token already exists in the trend list.`);
+        return;
+    }
+
+    const tokenData = await getTokenDataByDexscreenerApi(botClass.token_address);
+    if (!tokenData) {
+        await customSendMessage(botClass.bot, msg, `Can't find token info from dexscreener.`);
         return;
     }
 
@@ -90,6 +98,7 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
         newTrend.firstname = user.firstname;
         newTrend.lastname = user.lastname;
         newTrend.token_address = botClass.token_address;
+        newTrend.initial_price = tokenData.priceNative;
         newTrend.from_time = Math.floor(new Date().getTime()/1000);
         newTrend.to_time = newTrend.from_time + 3600 * botClass.time_for_trend;
         newTrend.duration = 3600 * botClass.time_for_trend;
@@ -98,6 +107,15 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
         await customSendMessage(botClass.bot, msg, `Payment Succeed.\nYou can get real time trend notification in channel now.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
         const channelBot = new ChannelBot(botClass.bot, botClass.connection);
         await channelBot.refreshTrendList();
+        const content = fs.readFileSync("./sent_message.txt", 'utf8');
+        let description = `<a href="https://dexscreener.com/solana/${botClass.token_address}" target="_blank">${tokenData.name}</a> has entered <a>Finder Trending</a>\n`;
+        if (tokenData.website) description += `\n<a href="${tokenData.website}" target="_blank">Website</a>`;
+        if (tokenData.socials.length > 0) {
+            for (let social of tokenData.socials) {
+                description += `\n<a href="${social.url}" target="${social.type == "telegram" ? "_blank": "_self"}">${social.type.charAt(0).toUpperCase() + social.type.slice(1)}</a>`;
+            }
+        }
+        await customSendMessage(botClass.bot, JSON.parse(content), description, [], false);
         return;
     } else {
         await customSendMessage(botClass.bot, msg, `Error during execution.\nPlease type /help to get help.`, [[{ text: 'Confirm', callback_data: 'deleteMessage' }]]);
@@ -111,6 +129,12 @@ export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Messa
     const existTokenInTrend = await TrendModel.find({ token_address: botClass.token_address });
     if (existTokenInTrend.length > 0) {
         await customSendMessage(botClass.bot, msg, `The same token already exists in the trend list.`);
+        return;
+    }
+
+    const tokenData = await getTokenDataByDexscreenerApi(botClass.token_address);
+    if (!tokenData) {
+        await customSendMessage(botClass.bot, msg, `Can't find token info from dexscreener.`);
         return;
     }
 
@@ -130,5 +154,14 @@ export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Messa
     
     const channelBot = new ChannelBot(botClass.bot, botClass.connection);
     await channelBot.refreshTrendList();
+    const content = fs.readFileSync("./sent_message.txt", 'utf8');
+    let description = `<a href="https://dexscreener.com/solana/${botClass.token_address}" target="_blank">${tokenData.name}</a> has entered <a>Finder Trending</a>\n`;
+    if (tokenData.website) description += `\n<a href="${tokenData.website}" target="_blank">Website</a>`;
+    if (tokenData.socials.length > 0) {
+        for (let social of tokenData.socials) {
+            description += `\n<a href="${social.url}" target="${social.type == "telegram" ? "_blank": "_self"}">${social.type.charAt(0).toUpperCase() + social.type.slice(1)}</a>`;
+        }
+    }
+    await customSendMessage(botClass.bot, JSON.parse(content), description, [], true);
     return;
 }
