@@ -26,6 +26,7 @@ export const MONGO_URL = retrieveEnvVariable('MONGO_URL', logger);
 export const WEBHOOK_PORT = retrieveEnvVariable('WEBHOOK_PORT', logger);
 export const WEBHOOK_IP = retrieveEnvVariable('WEBHOOK_IP', logger);
 export const WEBHOOK_URI = retrieveEnvVariable('WEBHOOK_URI', logger);
+export const HELIUS_API_KEY = retrieveEnvVariable('HELIUS_API_KEY', logger);
 
 // Solana Connection
 export const RPC_ENDPOINT = retrieveEnvVariable('RPC_ENDPOINT', logger);
