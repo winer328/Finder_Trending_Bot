@@ -211,6 +211,7 @@ export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Messa
     newTrend.firstname = user.firstname;
     newTrend.lastname = user.lastname;
     newTrend.token_address = botClass.token_address;
+    newTrend.initial_price = `${tokenData.priceNative}`;
     newTrend.from_time = Math.floor(new Date().getTime()/1000);
     newTrend.to_time = -1;
     newTrend.duration = -1;
