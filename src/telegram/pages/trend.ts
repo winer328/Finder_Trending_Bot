@@ -36,6 +36,7 @@ export const goToTrendPage = async (botClass: Bot, msg: TelegramBot.Message, isN
 export const goToPaymentPage = async (botClass: Bot, msg: TelegramBot.Message, isNew: boolean = true) => {
     const user = await getUserInfo(msg); if (!user || !msg.text) return;
     const token_data = await getTokenDataByDexscreenerApi(botClass.token_address);
+    console.log(token_data)
 
     const text = `Each Address below is unique to you.\n\nMake sure all infomation submitted is correct, no refunds will be given for entering incorrect address, telegram, or image.\n\nEntered Token: <code>${botClass.token_address}</code> (${token_data.symbol})\n\nSend <code>${botClass.sol_for_trend}</code> SOL to the wallet below for unlock ${botClass.time_for_trend} hours\n\n<code>${user.wallet_public_key}</code>\n\nClick 'Paid' once sent to scan for transaction.`;
 
@@ -111,7 +112,7 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
         if (tokenData.website) description += `\n<a href="${tokenData.website}" target="_blank">Website</a>`;
         if (tokenData.socials.length > 0) {
             for (let social of tokenData.socials) {
-                description += `\n<a href="${social.url}" target="${social.type == "telegram" ? "_blank": "_self"}">${social.type.chatAt(0).toUpperCase() + social.type.slice(1)}</a>`;
+                description += `\n<a href="${social.url}" target="${social.type == "telegram" ? "_blank": "_self"}">${social.type.charAt(0).toUpperCase() + social.type.slice(1)}</a>`;
             }
         }
         await customSendMessage(botClass.bot, JSON.parse(content), description, [], false);
@@ -131,6 +132,12 @@ export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Messa
         return;
     }
 
+    const tokenData = await getTokenDataByDexscreenerApi(botClass.token_address);
+    if (!tokenData) {
+        await customSendMessage(botClass.bot, msg, `Can't find token info from dexscreener.`);
+        return;
+    }
+
     const user = await getUserInfo(msg); if (!user || !msg.text) return;
     const newTrend = new TrendModel();
     newTrend.chat_id = user.chat_id;
@@ -147,5 +154,14 @@ export const processAddTokenTrend = async (botClass: Bot, msg: TelegramBot.Messa
     
     const channelBot = new ChannelBot(botClass.bot, botClass.connection);
     await channelBot.refreshTrendList();
+    const content = fs.readFileSync("./sent_message.txt", 'utf8');
+    let description = `<a href="https://dexscreener.com/solana/${botClass.token_address}" target="_blank">${tokenData.name}</a> has entered <a>Finder Trending</a>\n`;
+    if (tokenData.website) description += `\n<a href="${tokenData.website}" target="_blank">Website</a>`;
+    if (tokenData.socials.length > 0) {
+        for (let social of tokenData.socials) {
+            description += `\n<a href="${social.url}" target="${social.type == "telegram" ? "_blank": "_self"}">${social.type.charAt(0).toUpperCase() + social.type.slice(1)}</a>`;
+        }
+    }
+    await customSendMessage(botClass.bot, JSON.parse(content), description, [], true);
     return;
 }
