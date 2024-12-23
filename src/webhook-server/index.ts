@@ -51,8 +51,8 @@ export const runWebhookserver = async (botClass: Bot, connection: Connection) =>
                 const tokenDecimals = token_data.rawTokenAmount.decimals;
                 let description = ` ✳️ ${(tokenOutputAmount / 10 ** tokenDecimals).toFixed(4)} <a href="https://dexscreener.com/solana/${token_data.mint}" target="_blank">${tokenDescription.symbol}</a> were <a href="https://solscan.io/tx/${response_data[0].signature}" target="_blank">sold</a> for ${(native_data.amount / 10 ** 9).toFixed(4)} SOL\n\n`;
                 
-                if (dbToken.initial_price < tokenDescription.priceNative) {
-                    const upPercent = Math.floor(tokenDescription.priceNative/dbToken.initial_price * 100) - 100;
+                if (Number(dbToken.initial_price) < tokenDescription.priceNative) {
+                    const upPercent = Math.floor(tokenDescription.priceNative/Number(dbToken.initial_price) * 100) - 100;
                     if (upPercent > 0) {
                         description += `${token_data.symbol} is up ${upPercent}$ from Finder Trending`;
                     }

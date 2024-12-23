@@ -125,14 +125,14 @@ export const processTrendPayment = async (botClass: Bot, msg: TelegramBot.Messag
             logger.error(`Error during save webhook. ${e}`);
             return;
         }
-        
+
         const newTrend = new TrendModel();
         newTrend.chat_id = user.chat_id;
         newTrend.username = user.username;
         newTrend.firstname = user.firstname;
         newTrend.lastname = user.lastname;
         newTrend.token_address = botClass.token_address;
-        newTrend.initial_price = tokenData.priceNative;
+        newTrend.initial_price = `${tokenData.priceNative}`;
         newTrend.from_time = Math.floor(new Date().getTime()/1000);
         newTrend.to_time = newTrend.from_time + 3600 * botClass.time_for_trend;
         newTrend.duration = 3600 * botClass.time_for_trend;
